@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>Тренажёр: Вид расчета → Какие чеки пробить</title>
+  <title>Тренажёр: Какие чеки пробить → Вид расчета</title>
   <style>
     * {
       margin: 0;
@@ -72,7 +72,29 @@
       align-items: stretch;
     }
 
-    /* левая колонка — выпадающий список (вид расчёта) */
+    /* левая колонка — закреплённый текст (какие чеки пробить) */
+    .fixed-text-card {
+      background: #ffffff;
+      border: 1.8px solid #95CAFA;
+      border-radius: 1.2rem;
+      padding: 1rem 1.2rem;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      display: flex;
+      align-items: center;
+      min-height: 88px;
+    }
+
+    .fixed-text-card span {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #1f2a3e;
+      line-height: 1.45;
+      letter-spacing: -0.2px;
+      word-break: break-word;
+    }
+
+    /* правая колонка — выпадающий список (вид расчета) */
     .select-card {
       background: #ffffff;
       border: 1.8px solid #95CAFA;
@@ -101,7 +123,6 @@
       letter-spacing: -0.2px;
       line-height: 1.4;
       
-      /* Ключевые свойства для многострочного текста в option и в select */
       white-space: normal;
       word-wrap: break-word;
       word-break: break-word;
@@ -113,7 +134,13 @@
       background-size: 1.1rem;
     }
 
-    /* Стили для option внутри select — поддерживаем перенос текста */
+    /* Стиль для placeholder (невыбранного состояния) — голубой текст */
+    .elegant-select.placeholder-selected {
+      color: #4a8bc2;
+      font-weight: 500;
+    }
+
+    /* Стили для option внутри select */
     .elegant-select option {
       white-space: normal;
       word-wrap: break-word;
@@ -131,28 +158,6 @@
     .elegant-select:focus {
       border-color: #95CAFA;
       box-shadow: 0 0 0 2px rgba(149, 202, 250, 0.3);
-    }
-
-    /* правая колонка — закреплённый текст (какие чеки пробить) */
-    .fixed-text-card {
-      background: #ffffff;
-      border: 1.8px solid #95CAFA;
-      border-radius: 1.2rem;
-      padding: 1rem 1.2rem;
-      transition: all 0.2s;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-      display: flex;
-      align-items: center;
-      min-height: 88px;
-    }
-
-    .fixed-text-card span {
-      font-size: 1rem;
-      font-weight: 500;
-      color: #1f2a3e;
-      line-height: 1.45;
-      letter-spacing: -0.2px;
-      word-break: break-word;
     }
 
     /* кнопка проверки */
@@ -216,15 +221,15 @@
     }
 
     /* состояния ячеек после проверки */
-    .row-correct .select-card,
-    .row-correct .fixed-text-card {
+    .row-correct .fixed-text-card,
+    .row-correct .select-card {
       background-color: #e1f7e8;
       border-color: #2e8b57;
       transition: all 0.2s ease;
     }
 
-    .row-incorrect .select-card,
-    .row-incorrect .fixed-text-card {
+    .row-incorrect .fixed-text-card,
+    .row-incorrect .select-card {
       background-color: #ffe6e6;
       border-color: #d14545;
       transition: all 0.2s ease;
@@ -259,7 +264,6 @@
       }
     }
 
-    /* дополнительно для очень маленьких экранов */
     @media (max-width: 600px) {
       .elegant-select {
         font-size: 0.8rem;
@@ -274,13 +278,13 @@
 <body>
 <div class="trainer-card">
   <div class="trainer-container">
-    <!-- Шапка столбцов -->
+    <!-- Шапка столбцов: слева закреплённый текст, справа выбор -->
     <div class="table-header">
-      <div class="header-cell">Вид расчета</div>
       <div class="header-cell">Какие чеки пробить</div>
+      <div class="header-cell">Вид расчета</div>
     </div>
 
-    <!-- Динамическая таблица: левая часть (select) + правая часть (текст) -->
+    <!-- Динамическая таблица: левая часть (текст) + правая часть (select) -->
     <div class="matching-grid" id="matchingGrid"></div>
 
     <div class="check-button-wrapper">
@@ -293,9 +297,9 @@
 
 <script>
   // --------------------------------------------------------------
-  // ДАННЫЕ ДЛЯ ТРЕНАЖЁРА (строго по заданию)
-  // Левый столбец (выбор) — "Вид расчёта"
-  // Правый столбец (закреплённый текст) — "Какие чеки пробить"
+  // ДАННЫЕ ДЛЯ ТРЕНАЖЁРА
+  // Левый столбец (закреплённый текст) — "Какие чеки пробить"
+  // Правый столбец (выбор) — "Вид расчета"
   // --------------------------------------------------------------
   const trainingData = [
     {
@@ -382,92 +386,94 @@
   // Хранилище ссылок на DOM-элементы строк
   let rowElements = [];
 
-  // Функция отрисовки таблицы (левый select, правый фикс. текст)
+  // Функция отрисовки таблицы (левый текст, правый select)
   function renderTable() {
     gridContainer.innerHTML = '';
     rowElements = [];
     selectedValues = [];
 
     trainingData.forEach((item, idx) => {
-      // Значение по умолчанию — первый вариант из списка (удобно для UX)
-      const defaultOption = item.options[0];
-      selectedValues[idx] = defaultOption;
+      // Значение по умолчанию — пустая строка (ничего не выбрано)
+      selectedValues[idx] = "";
 
       // Создаём строку
       const rowDiv = document.createElement('div');
       rowDiv.className = 'row-item';
       rowDiv.setAttribute('data-row-index', idx);
 
-      // ----- ЛЕВАЯ КОЛОНКА: выпадающий список (Вид расчёта) с поддержкой многострочного текста -----
-      const leftSelectCard = document.createElement('div');
-      leftSelectCard.className = 'select-card';
+      // ----- ЛЕВАЯ КОЛОНКА: закреплённый текст (какие чеки пробить) -----
+      const leftTextCard = document.createElement('div');
+      leftTextCard.className = 'fixed-text-card';
+      const instructionSpan = document.createElement('span');
+      instructionSpan.textContent = item.fixedInstruction;
+      leftTextCard.appendChild(instructionSpan);
+
+      // ----- ПРАВАЯ КОЛОНКА: выпадающий список (Вид расчета) -----
+      const rightSelectCard = document.createElement('div');
+      rightSelectCard.className = 'select-card';
       const selectElem = document.createElement('select');
       selectElem.className = 'elegant-select';
       selectElem.setAttribute('data-idx', idx);
       
-      // Важно: задаём размеры, чтобы select мог растягиваться по высоте при необходимости
-      // и текст внутри option отображался с переносом.
       selectElem.style.width = '100%';
       
-      // Заполняем опции (все возможные виды расчёта)
+      // Добавляем пустой option-плейсхолдер первым (невыбираемый, голубой)
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = "";
+      placeholderOption.textContent = "— Выберите вид расчета —";
+      placeholderOption.disabled = true;
+      placeholderOption.selected = true;
+      placeholderOption.style.color = "#4a8bc2";
+      selectElem.appendChild(placeholderOption);
+      
+      // Заполняем опции (все возможные виды расчета)
       item.options.forEach(opt => {
         const optionElem = document.createElement('option');
         optionElem.value = opt;
         optionElem.textContent = opt;
-        // Для длинных строк обеспечиваем перенос через CSS + атрибут
         optionElem.style.whiteSpace = 'normal';
         optionElem.style.wordBreak = 'break-word';
-        if (opt === defaultOption) {
-          optionElem.selected = true;
-        }
         selectElem.appendChild(optionElem);
       });
+
+      // Применяем класс для голубого цвета (placeholder активен)
+      selectElem.classList.add('placeholder-selected');
 
       // Обработчик изменения выбора
       selectElem.addEventListener('change', (e) => {
         const rowIndex = parseInt(e.target.getAttribute('data-idx'));
-        selectedValues[rowIndex] = e.target.value;
-        // При изменении сбрасываем подсветку и сообщение (тренажёр становится нейтральным)
+        const newValue = e.target.value;
+        selectedValues[rowIndex] = newValue;
+        
+        // Управляем классом placeholder-selected
+        if (newValue === "") {
+          selectElem.classList.add('placeholder-selected');
+        } else {
+          selectElem.classList.remove('placeholder-selected');
+        }
+        
+        // При изменении сбрасываем подсветку и сообщение
         clearValidationStyles();
         messageDiv.innerHTML = '';
       });
 
-      leftSelectCard.appendChild(selectElem);
+      rightSelectCard.appendChild(selectElem);
 
-      // ----- ПРАВАЯ КОЛОНКА: закреплённый текст (какие чеки пробить) -----
-      const rightTextCard = document.createElement('div');
-      rightTextCard.className = 'fixed-text-card';
-      const instructionSpan = document.createElement('span');
-      instructionSpan.textContent = item.fixedInstruction;
-      rightTextCard.appendChild(instructionSpan);
-
-      // Собираем строку
-      rowDiv.appendChild(leftSelectCard);
-      rowDiv.appendChild(rightTextCard);
+      // Собираем строку (слева текст, справа select)
+      rowDiv.appendChild(leftTextCard);
+      rowDiv.appendChild(rightSelectCard);
       gridContainer.appendChild(rowDiv);
 
       // Сохраняем данные строки для последующей проверки
       rowElements.push({
         container: rowDiv,
-        leftCard: leftSelectCard,
-        rightCard: rightTextCard,
+        leftCard: leftTextCard,
+        rightCard: rightSelectCard,
         select: selectElem,
         correctAnswer: item.correctValue,
         index: idx
       });
     });
-    
-    // Дополнительно: после рендера убедимся, что option во всех select имеют корректный перенос
-    // (некоторые браузеры требуют явного указания white-space для option)
-    for (let i = 0; i < rowElements.length; i++) {
-      const select = rowElements[i].select;
-      const options = select.options;
-      for (let j = 0; j < options.length; j++) {
-        options[j].style.whiteSpace = 'normal';
-        options[j].style.wordBreak = 'break-word';
-        options[j].style.padding = '0.4rem 0.6rem';
-      }
-    }
   }
 
   // Сброс классов валидации (удаляем зелёные/красные подсветки)
@@ -488,8 +494,9 @@
     }
   }
 
-  // Основная проверка: каждая строка — если выбранный вид расчёта совпадает с правильным,
-  // строка становится зелёной, иначе красной + выводится сообщение об ошибке.
+  // Основная проверка: если выбранный вид расчета совпадает с правильным,
+  // строка становится зелёной, иначе красной + сообщение об ошибке.
+  // Пустое значение (ничего не выбрано) также считается ошибкой.
   function validateAndHighlight() {
     clearValidationStyles();
     let allCorrect = true;
@@ -497,7 +504,7 @@
     for (let i = 0; i < rowElements.length; i++) {
       const row = rowElements[i];
       const userChoice = selectedValues[i];
-      const isRowCorrect = (userChoice === row.correctAnswer);
+      const isRowCorrect = (userChoice !== "" && userChoice === row.correctAnswer);
 
       if (!isRowCorrect) {
         allCorrect = false;
@@ -507,11 +514,10 @@
       }
     }
 
-    // Сообщение в зависимости от результата (строго по условию: если ошибка — "У вас ошибка")
     if (allCorrect) {
-      messageDiv.innerHTML = '<div class="success-message">Все верно!</div>';
+      messageDiv.innerHTML = '<div class="success-message">Всё верно! Все соответствия правильные.</div>';
     } else {
-      messageDiv.innerHTML = '<div class="error-message">У вас ошибка. Проверьте строки, которые выделены красным.</div>';
+      messageDiv.innerHTML = '<div class="error-message">У вас ошибка. Проверьте выделенные красным строки.</div>';
     }
   }
 
@@ -521,18 +527,16 @@
     validateAndHighlight();
   }
 
-  // Инициализация и сброс стилей при старте
+  // Инициализация
   function init() {
     renderTable();
     syncSelectedFromDOM();
-    // Убираем любые сообщения и классы при старте
     clearValidationStyles();
     messageDiv.innerHTML = '';
   }
 
   // Назначение обработчика на кнопку
   function bindEvents() {
-    // Убираем предыдущие слушатели, чтобы избежать дублей (простой способ — заменить кнопку)
     const newCheckBtn = checkButton.cloneNode(true);
     checkButton.parentNode.replaceChild(newCheckBtn, checkButton);
     const finalBtn = document.getElementById('checkBtn');
@@ -542,18 +546,6 @@
   // Запуск тренажёра
   init();
   bindEvents();
-
-  // Дополнительная функция для адаптации высоты select при необходимости (опционально)
-  // Некоторые браузеры по умолчанию не дают option переноситься, но принудительное указание white-space: normal 
-  // и word-break в CSS и на элементе решает проблему.
-  // Чтобы убедиться, что длинные фразы (например, "Получили предоплату за товар") отображаются полностью,
-  // они будут переноситься в две строки при недостатке ширины.
-  // Учитывая, что максимальная ширина колонки адаптивна, текст будет выглядеть аккуратно.
-  
-  // Также для улучшения UX, если пользователь выбирает длинный вариант, select отображает его с переносом.
-  // В CSS добавлено: .elegant-select { white-space: normal; word-break: break-word; } 
-  // и для option аналогично.
-  // Теперь даже самые длинные варианты из шести видов расчета полностью видны и могут занимать 2 строки.
 </script>
 </body>
 </html>
